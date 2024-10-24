@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Finanzas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .mes {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Historial de Finanzas</h1>
+    <div id="historial"></div>
+
+    <script>
+        window.onload = function() {
+            let historial = JSON.parse(localStorage.getItem('historial')) || [];
+            let historialElement = document.getElementById('historial');
+
+            historial.forEach(function(mes) {
+                let divMes = document.createElement('div');
+                divMes.classList.add('mes');
+                divMes.innerHTML = `<h2>${mes.mes}</h2>`;
+
+                let ul = document.createElement('ul');
+                mes.gastos.forEach(function(gasto) {
+                    let li = document.createElement('li');
+                    li.innerText = `-$${gasto.monto} ${gasto.justificacion} (${gasto.fecha})`;
+                    ul.appendChild(li);
+                });
+
+                divMes.appendChild(ul);
+                historialElement.appendChild(divMes);
+            });
+        }
+    </script>
+
+</body>
+</html>

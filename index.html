@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database.js"></script>
+    <title>Finanzas Personales</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        input[type="number"], input[type="text"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            width: calc(100% - 22px);
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .reset {
+            background-color: #dc3545;
+        }
+        .reset:hover {
+            background-color: #c82333;
+        }
+        h3 {
+            color: #333;
+        }
+        p {
+            font-size: 18px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gestión de Finanzas Personales</h1>
+        <p>Sueldo mensual base: $570.000</p>
+        
+        <h3>Ingresa tus gastos:</h3>
+        <input type="text" id="gasto" placeholder="Ingresa un gasto">
+        <input type="text" id="justificacion" placeholder="Justificación del gasto">
+        <button onclick="agregarGasto()">Agregar Gasto</button>
+        <button class="reset" onclick="resetearDatos()">Resetear</button>
+
+        <h3>Gastos totales: $<span id="gastosTotales">0</span></h3>
+        <h3>Sueldo restante: $<span id="sueldoRestante">570000</span></h3>
+
+        <h3>Lista de gastos:</h3>
+        <ul id="listaGastos"></ul>
+
+        <!-- Link al historial -->
+        <a href="historial.html">Ver Historial Mensual</a>
+    </div>
+
+    <script>
+        let sueldoBase = 570000;
+        let gastosTotales = 0;
+        let listaGastos = [];
+        let mesActual = new Date().getMonth(); // Mes actual
+
+        // Cargar gastos desde LocalStorage si existen
+        window.onload = function() {
+            verificarMes(); // Verifica si es un nuevo mes
+            if (localStorage.getItem('gastosTotales')) {
+                gastosTotales = parseInt(localStorage.getItem('gastosTotales'));
+                listaGastos = JSON.parse(localStorage.getItem('listaGastos')) || [];
+                actualizarPantalla();
+            }
+        }
+
+        // Función para agregar un gasto
+        function agregarGasto() {
+            let gasto = document.getElementById('gasto').value;
+            let justificacion = document.getElementById('justificacion').value;
+
+            gasto = gasto.replace(/\./g, '');
+            gasto = parseInt(gasto);
+
+            if (!isNaN(gasto) && gasto > 0 && justificacion.trim() !== '') {
+                let fecha = new Date();
+                let fechaFormateada = fecha.toLocaleDateString() + ' ' + fecha.toLocaleTimeString();
+
+                gastosTotales += gasto;
+                listaGastos.push({ monto: gasto, justificacion: justificacion, fecha: fechaFormateada });
+
+                actualizarPantalla();
+
+                // Guardar en LocalStorage
+                localStorage.setItem('gastosTotales', gastosTotales);
+                localStorage.setItem('listaGastos', JSON.stringify(listaGastos));
+
+                // Limpiar los campos de texto
+                document.getElementById('gasto').value = '';
+                document.getElementById('justificacion').value = '';
+            } else {
+                alert("Por favor, ingresa un valor válido y una justificación.");
+            }
+        }
+
+        // Función para verificar si es un nuevo mes
+        function verificarMes() {
+            let mesGuardado = localStorage.getItem('mesActual');
+            if (mesGuardado !== null && parseInt(mesGuardado) !== mesActual) {
+                guardarHistorialMesAnterior(); // Guardar el mes anterior en el historial
+                resetearDatos(); // Reiniciar los datos para el nuevo mes
+            }
+            localStorage.setItem('mesActual', mesActual); // Guardar el mes actual
+        }
+
+        // Función para guardar el mes anterior en el historial
+        function guardarHistorialMesAnterior() {
+            let historial = JSON.parse(localStorage.getItem('historialMeses')) || [];
+            let mesNombre = new Date().toLocaleString('es-ES', { month: 'long' });
+
+            let mesData = {
+                mes: mesNombre,
+                gastosTotales: gastosTotales,
+                listaGastos: listaGastos
+            };
+
+            historial.push(mesData);
+            localStorage.setItem('historialMeses', JSON.stringify(historial));
+        }
+
+        function actualizarPantalla() {
+            document.getElementById('gastosTotales').innerText = gastosTotales;
+            let sueldoRestante = sueldoBase - gastosTotales;
+            document.getElementById('sueldoRestante').innerText = sueldoRestante;
+
+            let listaElement = document.getElementById('listaGastos');
+            listaElement.innerHTML = ''; // Limpiar lista
+
+            listaGastos.forEach(function(gasto) {
+                let li = document.createElement('li');
+                li.innerText = `-$${gasto.monto} ${gasto.justificacion} (${gasto.fecha})`;
+                listaElement.appendChild(li);
+            });
+        }
+
+        // Función para resetear los datos al nuevo mes
+        function resetearDatos() {
+            gastosTotales = 0;
+            listaGastos = [];
+            localStorage.removeItem('gastosTotales');
+            localStorage.removeItem('listaGastos');
+            actualizarPantalla();
+        }
+    </script>
+
+</body>
+</html>
